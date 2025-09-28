@@ -1,12 +1,11 @@
-import { Client, GatewayIntentBits, Partials, EmbedBuilder } from "discord.js";
-import fetch from "node-fetch";
-import { parseStringPromise } from "xml2js";
-import fs from "fs";
-import dotenv from "dotenv";
+import 'dotenv/config';
+import { Client, GatewayIntentBits, Partials, EmbedBuilder } from 'discord.js';
+import fetch from 'node-fetch';
+import { parseStringPromise } from 'xml2js';
+import fs from 'fs';
+import express from 'express';
 
-dotenv.config();
-
-// ==== Config de Discord ====
+// ==== Config Discord ====
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 
 // ==== Feeds RSS ====
@@ -37,9 +36,9 @@ function truncate(str, max) {
 
 function cleanHTML(html) {
   if (!html) return "";
-  let text = html.replace(/<br\s*\/?>/gi, "\n"); // saltos de línea
-  text = text.replace(/<a[^>]*>(.*?)<\/a>/gi, "$1"); // quitar <a>
-  text = text.replace(/<[^>]+>/g, ""); // quitar otras etiquetas
+  let text = html.replace(/<br\s*\/?>/gi, "\n"); 
+  text = text.replace(/<a[^>]*>(.*?)<\/a>/gi, "$1"); 
+  text = text.replace(/<[^>]+>/g, ""); 
   text = text.replace(/&amp;/g, "&")
              .replace(/&lt;/g, "<")
              .replace(/&gt;/g, ">")
@@ -51,7 +50,6 @@ function cleanHTML(html) {
 function parseTweetHTML(html) {
   if (!html) return { text: "", images: [] };
 
-  // Extraer URLs de imágenes
   const imgMatches = [...(html.matchAll(/https:\/\/t\.co\/[^\s"]+/g) || [])];
   const images = imgMatches
     .map(match => match[0])
@@ -72,7 +70,7 @@ function buildTweetEmbed(title, link, description, username, images) {
     .setFooter({ text: `${truncate(username, 256)} • Fuentes Oficiales` })
     .setURL(link);
 
-  if (images.length > 0) embed.setImage(images[0]); // primera imagen principal
+  if (images.length > 0) embed.setImage(images[0]); 
   return embed;
 }
 
@@ -120,14 +118,20 @@ async function checkTweets() {
   }
 }
 
-client.once("clientReady", async () => {
+client.once("ready", async () => {
   console.log(`Bot Twitter/RSS conectado como ${client.user.tag}`);
   if (client.user) {
-    client.user.setPresence({ activities: [{ name: "Twitter", type: 3 }], status: "online" });
+    client.user.setPresence({ activities: [{ name: "Twitter/X", type: 3 }], status: "online" });
   }
 
   checkTweets();
   setInterval(checkTweets, 2 * 60 * 1000);
 });
+
+// ==== Servidor Express para Uptime Robot ====
+const app = express();
+const PORT = process.env.PORT || 3000;
+app.get("/", (req, res) => res.send("Bot activo 👍"));
+app.listen(PORT, () => console.log(`Servidor ping activo en puerto ${PORT}`));
 
 client.login(DISCORD_TOKEN);
